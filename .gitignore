@@ -1,0 +1,14 @@
+# Ignore virtual environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore IDE/project files
+.vscode/
+.idea/
+*.sqlite3
+
+# Ignore environment files
+.env

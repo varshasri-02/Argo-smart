@@ -1,0 +1,238 @@
+{% extends "officer/officer_home.html" %}
+{% block content %}
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'officer/officer_active_soil.css' %}">
+ 
+    <!-- Page content -->
+    <div class="content">
+
+        <div class="form-group">
+            {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                <li>
+                    <div class="alert alert-success">
+                        {{ message }}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+
+        <h1><u><b>Verified Soils</b></u></h1>
+
+        <div class="addsoil">
+            <a class="btn btn-success" href="{% url 'officer_add_soil' %}"><i class="fas fa-plus-circle"></i>Add Soil Details in Location</a>
+        </div>
+
+        <table class="table">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">District</th>
+                    <th scope="col">region</th>
+                    <th scope="col">Organic Carbon</th>
+                    <th scope="col">Phosphorous</th>
+                    <th scope="col">Potassium</th>
+                    <th scope="col">Manganese</th>
+                    <th scope="col">Sulphur</th>
+                    <th scope="col">Ph value</th>
+                    <th scope="col">Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in soils %}
+                <tr>
+                    <td>{{s.district}}</td>
+                    <td>{{s.region}}</td>
+                    <td>{{s.organic_carbon}} %</td>
+                    <td>{{s.phosphorous}} Kg/Ha</td>
+                    <td>{{s.potassium}} Kg/Ha</td>
+                    <td>{{s.manganese}} ppm</td>
+                    <td>{{s.sulphur}} ppm</td>
+                    <td>{{s.ph_value}}</td>
+                    <td><a class="btn btn-danger" href="{% url 'delete_soil_active' %}?soil_id={{s.pk}}">Delete</a></td>
+                </tr>
+                {% empty %}
+                    <td><b>Nothing to show</b></td>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+{% endblock %}
+{% extends "officer/officer_home.html" %}
+{% block content %}
+{% load static %}
+
+<style>
+    .content {
+        padding: 20px;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .text-danger {
+        color: red;
+        font-size: 0.9em;
+    }
+    .btn {
+        margin-right: 10px;
+    }
+</style>
+
+<div class="content">
+    <h1><u><b>Add Soil Details</b></u></h1>
+    
+    {% if messages %}
+    <div class="form-group">
+        <ul class="messages">
+            {% for message in messages %}
+            <li>
+                <div class="alert alert-success">
+                    {{ message }}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="id_district">District:</label>
+            {{ form.district }}
+            {% if form.district.errors %}
+                <div class="text-danger">{{ form.district.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="id_region">Region/Taluk:</label>
+            {{ form.region }}
+            {% if form.region.errors %}
+                <div class="text-danger">{{ form.region.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="id_organic_carbon">Organic Carbon (%):</label>
+            {{ form.organic_carbon }}
+            {% if form.organic_carbon.errors %}
+                <div class="text-danger">{{ form.organic_carbon.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="id_phosphorous">Phosphorous (Kg/Ha):</label>
+            {{ form.phosphorous }}
+            {% if form.phosphorous.errors %}
+                <div class="text-danger">{{ form.phosphorous.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="id_potassium">Potassium (ppm):</label>
+            {{ form.potassium }}
+            {% if form.potassium.errors %}
+                <div class="text-danger">{{ form.potassium.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="id_manganese">Manganese (ppm):</label>
+            {{ form.manganese }}
+            {% if form.manganese.errors %}
+                <div class="text-danger">{{ form.manganese.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="id_sulphur">Sulphur (ppm):</label>
+            {{ form.sulphur }}
+            {% if form.sulphur.errors %}
+                <div class="text-danger">{{ form.sulphur.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="id_ph_value">pH Value:</label>
+            {{ form.ph_value }}
+            {% if form.ph_value.errors %}
+                <div class="text-danger">{{ form.ph_value.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <a href="{% url 'officer_active_soil' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+<!-- Load jQuery from CDN -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- JavaScript for dynamic region loading -->
+<script>
+    $(document).ready(function() {
+        console.log("✓ JavaScript loaded successfully!");
+        console.log("✓ District dropdown ID:", $('#id_district').length > 0 ? "Found" : "NOT FOUND");
+        console.log("✓ Region dropdown ID:", $('#id_region').length > 0 ? "Found" : "NOT FOUND");
+        
+        // When district dropdown changes
+        $('#id_district').change(function() {
+            var districtId = $(this).val();
+            console.log("District selected. ID:", districtId);
+            
+            // Clear region dropdown
+            $('#id_region').empty();
+            $('#id_region').append('<option value="">---------------------</option>');
+            
+            if (districtId) {
+                console.log("Making AJAX request...");
+                
+                // Make AJAX call to get regions
+                $.ajax({
+                    url: '{% url "ajax_load_regions" %}',
+                    data: {
+                        'district_id': districtId
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        console.log("✓ AJAX Success! Regions received:", data);
+                        console.log("✓ Number of regions:", data.length);
+                        
+                        if (data.length === 0) {
+                            console.warn("⚠ No regions found for this district!");
+                            $('#id_region').append('<option value="">No regions available</option>');
+                        } else {
+                            // Populate region dropdown with received data
+                            $.each(data, function(index, region) {
+                                console.log("  Adding region:", region.name);
+                                $('#id_region').append('<option value="' + region.id + '">' + region.name + '</option>');
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('✗ AJAX Error!');
+                        console.error('  Status:', status);
+                        console.error('  Error:', error);
+                        console.error('  Response:', xhr.responseText);
+                        alert('Error loading regions. Please check console for details.');
+                    }
+                });
+            } else {
+                console.log("No district selected");
+            }
+        });
+    });
+</script>
+
+{% endblock %}
