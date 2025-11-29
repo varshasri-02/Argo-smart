@@ -13,23 +13,17 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 from pathlib import Path
 import os
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '(wk4ui#ivm!*1p#==3ajv_*!3m^y)3c4%s=qye61^xjn=a*ss$'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'wk4ui#ivm!*1p#==3ajv_*!3m^y)3c4%s=qye61^xjn=a*ss$')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -76,25 +70,23 @@ TEMPLATES = [
 WSGI_APPLICATION = 'project2.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'Algosmart',       # Database name you created in MySQL Workbench
-        'USER': 'root',               # Your MySQL username (default = root)
-        'PASSWORD': '9854',  # Your MySQL password
-        'HOST': 'localhost',          # or '127.0.0.1'
-        'PORT': '3306',               # default MySQL port
+        'NAME': os.environ.get('DATABASE_NAME', 'Algosmart'),
+        'USER': os.environ.get('DATABASE_USER', 'root'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD', '9854'),
+        'HOST': os.environ.get('DATABASE_HOST', 'localhost'),
+        'PORT': os.environ.get('DATABASE_PORT', '3306'),
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'charset': 'utf8mb4',
+        },
     }
 }
 
-# Auto-created Primary Key
-
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
-# Password validation
-# https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -112,8 +104,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/3.1/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
@@ -126,12 +116,22 @@ USE_L10N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+# Crispy Forms
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
+# Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Security Settings (for production)
+if not DEBUG:
+    SECURE_SSL_REDIRECT = False  # Set to True when using HTTPS
+    SESSION_COOKIE_SECURE = False  # Set to True when using HTTPS
+    CSRF_COOKIE_SECURE = False  # Set to True when using HTTPS
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
