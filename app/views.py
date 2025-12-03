@@ -12,11 +12,13 @@ from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
 import pandas as pd
 import numpy as np
-from sklearn import metrics
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
+import joblib
+from sklearn.preprocessing import StandardScaler
 
 # Create your views here.
 
@@ -259,47 +261,175 @@ def change_password_visitor(request):
 @login_required(login_url='visitor_login')
 @user_passes_test(is_visitor)
 def visitor_find_crop(request):
-    result=''
+    result = ''
+    error_message = ''
 
     if request.method == 'POST':
         form = FindCropForm(request.POST)
-            
-        nitrogen = request.POST['nitrogen']
-        phosphorus = request.POST['phosphorus']
-        potassium = request.POST['potassium']
-        temperature = request.POST['temperature']
-        humidity = request.POST['humidity']
-        ph = request.POST['ph']
-        rainfall = request.POST['rainfall']
 
-        df = pd.read_csv("Machine Learning\Crop_recommendation.csv")
+        if form.is_valid():
+            try:
+                # Extract validated data
+                nitrogen = form.cleaned_data['nitrogen']
+                phosphorus = form.cleaned_data['phosphorus']
+                potassium = form.cleaned_data['potassium']
+                temperature = form.cleaned_data['temperature']
+                humidity = form.cleaned_data['humidity']
+                ph = form.cleaned_data['ph']
+                rainfall = form.cleaned_data['rainfall']
 
-        features = df[['N', 'P','K','temperature', 'humidity', 'ph', 'rainfall']]
-        target = df['label']
+                # Input validation ranges (based on dataset analysis)
+                if not (0 <= nitrogen <= 140):
+                    error_message = "Nitrogen level must be between 0 and 140"
+                elif not (0 <= phosphorus <= 145):
+                    error_message = "Phosphorus level must be between 0 and 145"
+                elif not (0 <= potassium <= 205):
+                    error_message = "Potassium level must be between 0 and 205"
+                elif not (8.8 <= temperature <= 43.7):
+                    error_message = "Temperature must be between 8.8°C and 43.7°C"
+                elif not (14.3 <= humidity <= 99.98):
+                    error_message = "Humidity must be between 14.3% and 99.98%"
+                elif not (3.5 <= ph <= 9.9):
+                    error_message = "pH value must be between 3.5 and 9.9"
+                elif not (20.2 <= rainfall <= 298.6):
+                    error_message = "Rainfall must be between 20.2 cm and 298.6 cm"
+                else:
+                    # Load pre-trained model and scaler
+                    try:
+                        model = joblib.load('crop_model.joblib')
+                        scaler = joblib.load('scaler.joblib')
+                    except FileNotFoundError:
+                        error_message = "Model files not found. Please contact administrator."
+                        return render(request, 'visitor/visitor_find_crop.html', {'form': form, 'error_message': error_message})
 
-        acc = []
-        model = []
+                    # Prepare input data
+                    input_data = np.array([[nitrogen, phosphorus, potassium, temperature, humidity, ph, rainfall]])
 
-        Xtrain, Xtest, Ytrain, Ytest = train_test_split(features,target,test_size = 0.2,random_state =2)
+                    # Scale the input
+                    input_scaled = scaler.transform(input_data)
 
-        RF = RandomForestClassifier(n_estimators=20, random_state=0)
-        RF.fit(Xtrain.values,Ytrain.values)
+                    # Make prediction
+                    prediction = model.predict(input_scaled)
+                    predicted_crop = prediction[0]
 
-        predicted_values = RF.predict(Xtest.values)
+                    result = f"The predicted crop is {predicted_crop}"
 
-        x = metrics.accuracy_score(Ytest, predicted_values)
-        acc.append(x)
-        model.append('RF')
-
-        data = np.array([[nitrogen, phosphorus, potassium, temperature, humidity, ph, rainfall]])
-        prediction = RF.predict(data)
-        result = "The predicted crop is "+ str(prediction).replace("'","")[1:-1]
-
+            except Exception as e:
+                error_message = f"An error occurred during prediction: {str(e)}"
+        else:
+            error_message = "Please correct the errors in the form."
     else:
-        form=FindCropForm()
-    return render(request, 'visitor/visitor_find_crop.html',{'form':form,'result':result})
+        form = FindCropForm()
+
+    return render(request, 'visitor/visitor_find_crop.html', {
+        'form': form,
+        'result': result,
+        'error_message': error_message
+    })
 
 
+
+#<-----API Endpoint for Crop Prediction----->#
+@csrf_exempt
+@require_http_methods(["POST"])
+def predict_crop_api(request):
+    """
+    API endpoint for crop prediction.
+    Accepts JSON with: nitrogen, phosphorus, potassium, temperature, humidity, ph, rainfall
+    Returns JSON with prediction or error.
+    """
+    try:
+        # Parse JSON data
+        data = json.loads(request.body)
+
+        # Extract parameters
+        required_fields = ['nitrogen', 'phosphorus', 'potassium', 'temperature', 'humidity', 'ph', 'rainfall']
+        input_data = []
+
+        for field in required_fields:
+            if field not in data:
+                return JsonResponse({
+                    'error': f'Missing required field: {field}'
+                }, status=400)
+            try:
+                value = float(data[field])
+                input_data.append(value)
+            except (ValueError, TypeError):
+                return JsonResponse({
+                    'error': f'Invalid value for {field}: must be a number'
+                }, status=400)
+
+        nitrogen, phosphorus, potassium, temperature, humidity, ph, rainfall = input_data
+
+        # Input validation ranges
+        validations = {
+            'nitrogen': (0, 140),
+            'phosphorus': (0, 145),
+            'potassium': (0, 205),
+            'temperature': (8.8, 43.7),
+            'humidity': (14.3, 99.98),
+            'ph': (3.5, 9.9),
+            'rainfall': (20.2, 298.6)
+        }
+
+        for field, (min_val, max_val) in validations.items():
+            value = locals()[field]
+            if not (min_val <= value <= max_val):
+                return JsonResponse({
+                    'error': f'{field.capitalize()} must be between {min_val} and {max_val}'
+                }, status=400)
+
+        # Load model and scaler
+        try:
+            model = joblib.load('crop_model.joblib')
+            scaler = joblib.load('scaler.joblib')
+        except FileNotFoundError:
+            return JsonResponse({
+                'error': 'Model files not found. Please contact administrator.'
+            }, status=500)
+
+        # Prepare and scale input
+        input_array = np.array([input_data])
+        input_scaled = scaler.transform(input_array)
+
+        # Make prediction
+        prediction = model.predict(input_scaled)
+        predicted_crop = prediction[0]
+
+        # Get prediction probabilities if available
+        try:
+            probabilities = model.predict_proba(input_scaled)[0]
+            crop_classes = model.classes_
+            prob_dict = dict(zip(crop_classes, probabilities))
+        except:
+            prob_dict = None
+
+        response = {
+            'prediction': predicted_crop,
+            'input_data': {
+                'nitrogen': nitrogen,
+                'phosphorus': phosphorus,
+                'potassium': potassium,
+                'temperature': temperature,
+                'humidity': humidity,
+                'ph': ph,
+                'rainfall': rainfall
+            }
+        }
+
+        if prob_dict:
+            response['probabilities'] = prob_dict
+
+        return JsonResponse(response)
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'error': 'Invalid JSON format'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Internal server error: {str(e)}'
+        }, status=500)
 
 
 #<-----Signup For Admin (Protected - Only accessible by existing admins)----->#

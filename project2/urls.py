@@ -56,6 +56,7 @@ urlpatterns = [
 
     path('visitor_find_crop',visitor_find_crop, name='visitor_find_crop'),
 
+    path('api/predict-crop/', predict_crop_api, name='predict_crop_api'),
 
     path('admin-signup/', views.admin_signup, name='admin_signup'),
 ]
