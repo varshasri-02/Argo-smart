@@ -1,31 +1,245 @@
 {% extends "visitor/visitor_home.html" %}
 {% block content %}
 {% load static %}
-<link rel="stylesheet" type="text/css" href="{% static 'visitor/visitor_profile.css' %}">
 
-    <!-- Page content -->
-    <div class="content">
-        <h1><u><b>Profile</b></u></h1>
+<style>
+.profile-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    margin: 2rem 0;
+}
 
-        <div class="profile">
-            <pre><b>Name          :</b>   {{user.visitor.get_name}}</pre>
-            <pre><b>Username   :</b>   {{user.username}} </pre>
-            <pre><b>Email          :</b>   {{user.visitor.email}} </pre>
-            <pre><b>Gender        :</b>   {{user.visitor.gender}} </pre>
-            <pre><b>Joindate      :</b>   {{user.visitor.joindate}} </pre>
+.profile-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #2d5a27, #4ade80);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+    margin: 0 auto 1.5rem;
+    box-shadow: 0 8px 25px rgba(45, 90, 39, 0.3);
+}
+
+.profile-title {
+    color: #2d5a27;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.profile-subtitle {
+    color: #6b7280;
+    font-size: 1.1rem;
+}
+
+.profile-info {
+    background: #f8fafc;
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.info-item {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.info-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.info-label {
+    font-weight: 600;
+    color: #2d5a27;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.info-value {
+    font-size: 1.2rem;
+    color: #1f2937;
+    font-weight: 500;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-active {
+    background: linear-gradient(45deg, #10b981, #34d399);
+    color: white;
+}
+
+.actions-section {
+    background: linear-gradient(45deg, #2d5a27, #4ade80);
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+    color: white;
+}
+
+.actions-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.btn-action {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 12px 30px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-block;
+    margin: 0 10px;
+}
+
+.btn-action:hover {
+    background: white;
+    color: #2d5a27;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+    .profile-container {
+        padding: 2rem 1rem;
+    }
+
+    .profile-title {
+        font-size: 2rem;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .actions-section {
+        padding: 1.5rem;
+    }
+
+    .btn-action {
+        display: block;
+        margin: 10px 0;
+        width: 100%;
+    }
+}
+</style>
+
+<div class="profile-container">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <i class="fas fa-user"></i>
         </div>
+        <h1 class="profile-title">{{ user.visitor.get_name }}</h1>
+        <p class="profile-subtitle">@{{ user.username }}</p>
+    </div>
 
-        <hr>
-<center>
-        <div class="row">
-            <div>
-                <h3>Change Password</h3>
-                <div>
-                    <a href="{% url 'change_password_visitor' %}" class="btn btn-success">Change</a>
+    <!-- Profile Information -->
+    <div class="profile-info">
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">
+                    <i class="fas fa-user me-2"></i>Full Name
+                </span>
+                <div class="info-value">{{ user.visitor.get_name }}</div>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">
+                    <i class="fas fa-at me-2"></i>Username
+                </span>
+                <div class="info-value">{{ user.username }}</div>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">
+                    <i class="fas fa-envelope me-2"></i>Email Address
+                </span>
+                <div class="info-value">{{ user.visitor.email }}</div>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">
+                    <i class="fas fa-venus-mars me-2"></i>Gender
+                </span>
+                <div class="info-value">{{ user.visitor.gender }}</div>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">
+                    <i class="fas fa-calendar-alt me-2"></i>Join Date
+                </span>
+                <div class="info-value">{{ user.visitor.joindate|date:"F j, Y" }}</div>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">
+                    <i class="fas fa-check-circle me-2"></i>Account Status
+                </span>
+                <div class="info-value">
+                    {% if user.visitor.status %}
+                        <span class="status-badge status-active">
+                            <i class="fas fa-check me-1"></i>Active
+                        </span>
+                    {% else %}
+                        <span class="status-badge" style="background: #ef4444; color: white;">
+                            <i class="fas fa-clock me-1"></i>Pending Approval
+                        </span>
+                    {% endif %}
                 </div>
             </div>
         </div>
-</center>
     </div>
-    
+
+    <!-- Actions Section -->
+    <div class="actions-section">
+        <h3 class="actions-title">
+            <i class="fas fa-cogs me-2"></i>Account Management
+        </h3>
+        <a href="{% url 'change_password_visitor' %}" class="btn-action">
+            <i class="fas fa-key me-2"></i>Change Password
+        </a>
+        <a href="{% url 'logout' %}" class="btn-action">
+            <i class="fas fa-sign-out-alt me-2"></i>Logout
+        </a>
+    </div>
+</div>
+
 {% endblock %}
