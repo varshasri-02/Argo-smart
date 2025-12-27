@@ -19,7 +19,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'wk4ui#ivm!*1p#==3ajv_*!3m^y)3c4%s=qye61^xjn=a*ss$')
 
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = True  # Hardcoded for development
 
 ALLOWED_HOSTS = ["*"]
 
